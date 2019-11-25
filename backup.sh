@@ -33,17 +33,12 @@ function HelloProg {
 	echo -e "	\x1b[4mFile extension:\e[0m		$3"
 	echo -e "	\x1b[4mOutput:\e[0m			$4 \n"
 }
-
 function MainEnterPoint {
-	BACKUP_CONFIG="backup.config"
-
-	AMOUNT_OF_BACKUPS=`cat $BACKUP_CONFIG | grep "AMOUNT_OF_BACKUPS" | cut -d '=' -f 2`
-	BACKUP_PATH_INPUT=`cat $BACKUP_CONFIG | grep "BACKUP_PATH_INPUT" | cut -d '=' -f 2`
-	FILE_EXTENSION=`cat $BACKUP_CONFIG | grep "FILE_EXTENSION" | cut -d '=' -f 2`
-	BACKUP_PATH_OUTPUT=`cat $BACKUP_CONFIG | grep "BACKUP_PATH_OUTPUT" | cut -d '=' -f 2`
+	
+	ReadVariables	
 
 	if [[ $AMOUNT_OF_BACKUPS == "" || $BACKUP_PATH_INPUT == "" || $BACKUP_PATH_OUTPUT == "" || $FILE_EXTENSION == "" ]]; then
-		echo -e "Error while read variables: Incorrect backup.config file"
+		echo -e "Read variables error: Fill each field in \x1b[1mbackup.config\e[0m file!"
 		exit 0
 	fi
 
@@ -53,13 +48,24 @@ function MainEnterPoint {
 
 }
 #============================================================================
+# Read variables
+#============================================================================
+function ReadVariables {
+	BACKUP_CONFIG="backup.config"
+
+	AMOUNT_OF_BACKUPS=`cat $BACKUP_CONFIG | grep "AMOUNT_OF_BACKUPS" | cut -d '=' -f 2`
+	BACKUP_PATH_INPUT=`cat $BACKUP_CONFIG | grep "BACKUP_PATH_INPUT" | cut -d '=' -f 2`
+	FILE_EXTENSION=`cat $BACKUP_CONFIG | grep "FILE_EXTENSION" | cut -d '=' -f 2`
+	BACKUP_PATH_OUTPUT=`cat $BACKUP_CONFIG | grep "BACKUP_PATH_OUTPUT" | cut -d '=' -f 2`
+}
+#============================================================================
 # Make crontab job 
 #============================================================================
 function MakeTimeTable {
 	echo -e "Time has to follow the structure:\n" 
 	echo -e "	\x1b[1mminute\e[0m[0-59] \x1b[1mhour\e[0m[0-23] \x1b[1mday\e[0m[1-31] \x1b[1mmonth\e[0m[1-12]\n"
 	read -p "Enter: " BACKUP_CRON_SET
-	if [ "$1" == "del"];
+	if [ "$2" == "del" ];
 		then crontab -r
 		else echo "$BACKUP_CRON_SET bash backup.sh" | crontab -
 	fi
@@ -74,6 +80,10 @@ function MakeBackup {
 	if [ "$4" != "*" ];
 		then BACKUPING_FILES=`ls | grep $4$`
 		else BACKUPING_FILES=`ls`
+	fi
+	if [ "$BACKUPING_FILES" == "" ]; then
+		echo -e "No such $4 files in directory"
+		exit 0
 	fi
 	tar -czf $TDGT$OF".tar.gz" $BACKUPING_FILES
 	cd $TDGT
@@ -130,6 +140,7 @@ fi
 #					Change settings  [-c] [HINTS]
 #============================================================================
 if [ "$1" == "-c" ]; then
+	ReadVariables
 	# Change all hints
 	if [ "$2" == "all" ]; then
 		read -p "Amount of backups:	" AMOUNT_OF_BACKUPS
