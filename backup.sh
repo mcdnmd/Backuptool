@@ -1,11 +1,11 @@
 #!/bin/bash
-
 function HelpInfo {
    	echo -e "Usage: $0 [OPTINS] [HINTS]\n"
    	echo -e "\x1b[1mINFO\e[0m"
    	echo -e "	This is an automatic backup system!"
    	echo -e "	\x1b[4mbackup name:\e[0m   backup-[y]-[m]-[d]--[h]-[m]-[s].tar.gz"
    	echo -e "	\x1b[4mchecksum name:\e[0m backup-[y]-[m]-[d]--[h]-[m]-[s].checksum\n"
+   	echo -e "	If it'll be your first boot please fill each field in backup.config\n"
    	echo -e "\x1b[1mOPTIONS\e[0m"
    	echo -e "	-h/--help  Output a usage message and exit."
    	echo -e "	-info      Output an info about developer.\n"
@@ -15,10 +15,11 @@ function HelpInfo {
    	echo -e "		Notice, \x1b[4mdon't forget\e[0m to use '\x1b[1m/\e[0m' at the"
    	echo -e "		end of directory name!"
    	echo -e "		  \x1b[33mbnum\e[0m - amount of valid backups"
-   	echo -e "		  \x1b[33mext\e[0m  - file extension"
-   	echo -e "		  \x1b[33min\e[0m   - input directory"
-   	echo -e "		  \x1b[33mout\e[0m  - output directory"
-   	echo -e "		  \x1b[33mall\e[0m    - all hints\n"   
+   	echo -e "		  \x1b[33mext\e[0m  - file extension. (ex. .doc)"
+   	echo -e "		  \x1b[33min\e[0m   - input directory. (ex. /home/)"
+   	echo -e "		  \x1b[33mout\e[0m  - output directory. (ex. /home/user/"
+   	echo -e "		  \x1b[33mall\e[0m  - each hints. Also you can use \x1b[32mall\e[0m"
+   	echo -e "	                 for backuping whole dir.\n"   
    	echo -e "	-f  \x1b[4mHINT\e[0m"
    	echo -e "		Use \x1b[33mdel\e[0m to stop making backups frequently"
    	echo -e "		or use empty string to change timetable.\n"
@@ -77,7 +78,7 @@ function MakeBackup {
 	CheckBackupNum $1 $3 $2
 	OF="backup-$(date +%F--%H-%M-%S)"
 	TDGT=$1
-	if [ "$4" != "*" ];
+	if [ "$4" != "all" ];
 		then BACKUPING_FILES=`ls | grep $4$`
 		else BACKUPING_FILES=`ls`
 	fi
@@ -96,15 +97,20 @@ function MakeBackup {
 function CheckBackupNum {
 	cd $1
 	FILE_COUNTER=0
-	for f in `ls | grep ^backup- | grep .tar.gz$ | cut -d " " -f 9`; do 
-		if [ $FILE_COUNTER == 0 ]; then 
-			DUMP_FOR_REMOVE=$f
-		fi
+	for f in `ls | grep ^backup- | grep .tar.gz$ | cut -d " " -f 9`; 
+	do 
+		array+=($f)
 		((FILE_COUNTER++));
 	done
-	if (($FILE_COUNTER > $2-1)); then
-		rm $DUMP_FOR_REMOVE
-		rm `echo $DUMP_FOR_REMOVE | cut -f1 -d'.'`".checksum"
+	FILE_COUNTER=$(expr $FILE_COUNTER - $2 + 1)
+	echo $FILE_COUNTER
+	if (($FILE_COUNTER >= 0)); then
+		for (( i=0; i<$FILE_COUNTER; i++ )) 
+		do
+			echo $i
+			rm ${array[$i]}
+			rm `echo ${array[$i]} | cut -f1 -d'.'`".checksum"
+		done
 	fi
 	cd $3
 }
